@@ -1,10 +1,5 @@
 `timescale 1ns / 1ps
 `include "Configuration.v"
-//////////////////////////////////////////////////////////////////
-//    IonControl 1.0:  Copyright 2016 Sandia Corporation              
-//    This Software is released under the GPL license detailed    
-//    in the file "license.txt" in the top-level pyGSTi directory 
-//////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 // Pulse Programmer Core
 //
@@ -347,7 +342,7 @@ module ppseq(fast_clk, memory_clk, clk_i, usb_clk, reset_i, start_i, stop_i, pp_
 					else
 						PC <= PC + 1;
 
-					cmd_code_buffer <= cmd_in[31:24]; // Is it still in the first 8 bits [63:56], or is it here? RN
+					cmd_code_buffer <= cmd_in[31:24]; 
 					cmd_data_buffer <= cmd_in[23:0];
 					output_data_available <= 1'b0;
 					data_fifo_read <= 1'b0;

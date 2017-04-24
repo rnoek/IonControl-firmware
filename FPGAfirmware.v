@@ -1,11 +1,5 @@
 `timescale 1ns / 1ps
 `include "Configuration.v"
-//////////////////////////////////////////////////////////////////
-//    IonControl 1.0:  Copyright 2016 Sandia Corporation              
-//    This Software is released under the GPL license detailed    
-//    in the file "license.txt" in the top-level pyGSTi directory 
-//////////////////////////////////////////////////////////////////
-
 
 //////////////////////////////////////////////////////////////////////////////////
 // Interface to pulse sequencer:
@@ -120,7 +114,7 @@ module FPGAfirmware #(
  
 );
 	
-parameter DDSChannels = 12;
+parameter DDSChannels = 14;
 
 	/////////////////////////////////////////////////////////////////////////
 	// Clocks
@@ -295,7 +289,11 @@ parameter DDSChannels = 12;
 `endif	
 
 `ifdef BreakoutDuke
-	assign out2[5:0] = shutter[13:8];
+	`ifdef SerialOutputOut2_5
+		assign out2[3:0] = shutter[11:8];
+	`else
+		assign out2[5:0] = shutter[13:8];
+	`endif
 	`ifdef InvertSma
 		assign sma[7:0] =  ~shutter[31:24];
 	`else
@@ -472,7 +470,7 @@ parameter DDSChannels = 12;
 	wire serial_out;
 	wire [3:0] serial_out_debug;
 	assign out2[7] = serial_out;
-	AsyncTransmitter SerialTrans(.clk(clk), .command(DDSAddress), .data(DDSData), .ready(serial_cmd_trig), .TxD(serial_out), .ndone(dds_write_done_bundle[10]),
+	AsyncTransmitter SerialTrans(.clk(clk), .command(DDSAddress), .data(DDSData), .ready(serial_cmd_trig & (DDSAddress==8'h0)), .TxD(serial_out), .ndone(dds_write_done_bundle[10]),
 											.debug(serial_out_debug) );
 	wire serial_long_trigger;
 	timed_monoflop #(8) trig_17(.clock(clk), .enable(1'b1), .trigger(trigger[17]), .q(serial_long_trigger), .pulselength(8'd100));
@@ -485,6 +483,22 @@ parameter DDSChannels = 12;
 	`endif
 `endif
 
+`ifdef SerialOutputOut2_5 // This is originally added by Rachel Noek, January 2017, for the Duke MEMS system microcontroller.
+	wire serial_out2;
+	wire [3:0] serial_out_debug2;
+	assign out2[5] = serial_out2;
+	AsyncTransmitter SerialTransMEMS(.clk(clk), .command({4'b0, DDSCmd}), .data(DDSData), .ready(serial_cmd_trig & (DDSAddress==8'h10)), .TxD(serial_out2), .ndone(dds_write_done_bundle[13]),
+											.debug(serial_out_debug2) );
+	wire serial_long_trigger2;
+	timed_monoflop #(8) trig_18(.clock(clk), .enable(1'b1), .trigger(trigger[18]), .q(serial_long_trigger2), .pulselength(8'd100));
+
+	assign out2[4] = serial_long_trigger2;
+`else
+	assign dds_write_done_bundle[13] = 1'b0;
+	`ifndef WiggelyLineBox
+		assign out2[5:4] = shutter[13:12];
+	`endif
+`endif
 
 	/////////////////////////////////////////////////////////////////////////
 	// LED

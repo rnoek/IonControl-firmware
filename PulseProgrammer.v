@@ -1,12 +1,25 @@
 `timescale 1ns / 1ps
 `include "Configuration.v"
 
-//////////////////////////////////////////////////////////////////
-//    IonControl 1.0:  Copyright 2016 Sandia Corporation              
-//    This Software is released under the GPL license detailed    
-//    in the file "license.txt" in the top-level pyGSTi directory 
-//////////////////////////////////////////////////////////////////
-
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date:    11:35:30 09/14/2014 
+// Design Name: 
+// Module Name:    PulseProgrammer 
+// Project Name: 
+// Target Devices: 
+// Tool versions: 
+// Description: 
+//
+// Dependencies: 
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//
+//////////////////////////////////////////////////////////////////////////////////
 module PulseProgrammer #(
 	parameter C3_NUM_DQ_PINS            = 16,       
 	parameter C3_MEM_ADDR_WIDTH         = 13,       
@@ -144,15 +157,17 @@ module PulseProgrammer #(
 	wire [63:0] HostDDSData;
 	wire [15:0] HostDDSCmd;
 	wire host_command_trig;
-	wire  host_ddstrig, host_dactrig;
+	wire  host_ddstrig, host_dactrig, host_serialtrig;
 	assign DDSData = pp_active ? pp_ddsdata : HostDDSData;
 	assign DDSCmd = pp_active ? { pp_ddscmd[3:0]} : { HostDDSCmd[3:0] };
 	assign DDSAddress = pp_active ? pp_ddscmd[11:4] : HostDDSCmd[11:4];
 	
 	monoflop host_ddstrig_mf(.clock(clk), .enable(HostDDSCmd[15]), .trigger(host_command_trig), .q(host_ddstrig) );
 	monoflop host_dactrig_mf(.clock(clk), .enable(HostDDSCmd[14]), .trigger(host_command_trig), .q(host_dactrig) );
+	monoflop host_serialtrig_mf(.clock(clk), .enable(HostDDSCmd[13]), .trigger(host_command_trig), .q(host_serialtrig) ); 
 	assign dds_cmd_trig = pp_active ? pp_ddstrig : host_ddstrig;
 	assign dac_cmd_trig = pp_active ? pp_dactrig : host_dactrig;
+	assign serial_cmd_trig = pp_active ? pp_serialtrig : host_serialtrig;
 
 	/////////////////////////////////////////////////////////////////////////
 	// Data Input FIFO
@@ -215,7 +230,7 @@ module PulseProgrammer #(
 	////////r/////////////////////////////////////////////////////////////////
 	// PP memory
 	// 
-	// Memory is 32bits wide, 4000 deep // UPDATED to 64 bits wide RN 2014-06-30
+	// Memory is 32bits wide, 4000 deep // UPDATED to 64 bits 
 	// Pipes connect it to the FPGA
 	/////////////////////////////////////////////////////////////////////////
 	wire [11:0]		pp_addr, pp_cmd_addr;
@@ -279,7 +294,7 @@ module PulseProgrammer #(
 	wire [63:0]    pp_trigger; // trigger lines will give a one clock cycle trigger out
 	wire [63:0]		pp_ddsdata;
 	wire [11:0]		pp_ddscmd;
-	wire 			   pp_ddstrig, pp_dactrig;
+	wire 			   pp_ddstrig, pp_dactrig, pp_serialtrig;
 
 
 	wire pp_debug;
@@ -291,7 +306,7 @@ module PulseProgrammer #(
 				.pp_addr_o(pp_addr), .pp_din_i(pp_dout), .pp_we_o(pp_web), .pp_dout_o(pp_din), 
 				.cmd_addr_o(pp_cmd_addr), .cmd_in(pp_cmd_dout),
 				.count_i(count_in), .ddsdata_o(pp_ddsdata), .ddscmd_o(pp_ddscmd), .ddscmd_trig_o(pp_ddstrig), .daccmd_trig_o(pp_dactrig),
-				.serialcmd_trig_o(serial_cmd_trig), .parameter_trig_o(parameter_trig),
+				.serialcmd_trig_o(pp_serialtrig), .parameter_trig_o(parameter_trig),
 				.write_active(write_active), .shutter_o(pp_shutter), .trigger_o(pp_trigger),
 				.fifo_data(fifo_din), .fifo_data_ready(fifo_wr_en), .fifo_full(fifo_full), .fifo_rst(resetDataOutputFifo),
 				.data_fifo_read(DataFIFORead), .data_fifo_data(DataFIFOData), .data_fifo_empty(DataFIFOEmpty),
